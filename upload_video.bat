@@ -32,7 +32,9 @@ if not exist .git (
 )
 
 REM 检查远程仓库是否正确
-for /f "tokens=2" %%i in ('git remote get-url origin') do set CURRENT_REMOTE=%%i
+git remote get-url origin > remote.txt
+set /p CURRENT_REMOTE=<remote.txt
+del remote.txt
 if not "%CURRENT_REMOTE%" == "%REPO_URL%" (
     echo 远程仓库不正确，正在更新...
     git remote set-url origin %REPO_URL%
@@ -91,7 +93,7 @@ echo 正在推送文件到GitHub...
 echo 注意：大文件上传可能需要较长时间...
 git push origin master
 
-if %errorlevel% eq 0 (
+if %errorlevel% == 0 (
     echo 上传成功！
     echo 提交内容：
     echo %COMMIT_MSG%
