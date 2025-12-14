@@ -43,31 +43,34 @@ if not "%CURRENT_REMOTE%" == "%REPO_URL%" (
 REM 跟踪mp4文件使用Git LFS
 git lfs track "*.mp4"
 
-REM 获取新增的文件列表
+REM 获取新增和修改的文件列表
 setlocal enabledelayedexpansion
 set NEW_FILES=
-for /f "delims=" %%f in ('git status --porcelain ^| findstr /r "^??"') do (
-    set FILE=%%f
-    set FILE=!FILE:~3!
-    set NEW_FILES=!NEW_FILES! "!FILE!"
+set MODIFIED_FILES=
+set ALL_CHANGED_FILES=
+
+for /f "delims=" %%f in ('git status --porcelain') do (
+    set STATUS_LINE=%%f
+    set FILE=!STATUS_LINE:~3!
+    
+    REM 检查是否是新增文件（??）
+    if "!STATUS_LINE:~0,2!" == "??" (
+        set NEW_FILES=!NEW_FILES! "!FILE!"
+        set ALL_CHANGED_FILES=!ALL_CHANGED_FILES! "!FILE!"
+    )
+    
+    REM 检查是否是修改的文件（ M）
+    if "!STATUS_LINE:~0,2!" == " M" (
+        set MODIFIED_FILES=!MODIFIED_FILES! "!FILE!"
+        set ALL_CHANGED_FILES=!ALL_CHANGED_FILES! "!FILE!"
+    )
 )
 
-if "%NEW_FILES%" == "" (
-    echo 没有新增文件需要上传
+if "%ALL_CHANGED_FILES%" == "" (
+    echo 没有新增或修改的文件需要上传
     pause
     exit /b 0
 )
-
-REM 获取修改的文件列表
-set MODIFIED_FILES=
-for /f "delims=" %%f in ('git status --porcelain ^| findstr /r "^ M"') do (
-    set FILE=%%f
-    set FILE=!FILE:~3!
-    set MODIFIED_FILES=!MODIFIED_FILES! "!FILE!"
-)
-
-REM 合并新增和修改的文件
-set ALL_CHANGED_FILES=%NEW_FILES% %MODIFIED_FILES%
 
 REM 添加所有修改的文件到暂存区
 echo 正在添加文件到暂存区...
